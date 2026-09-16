@@ -1,0 +1,10 @@
+[Unit]
+Description=Executa o relatorio semanal de trafego toda segunda as 08:00 (Brasilia)
+
+[Timer]
+OnCalendar=Mon *-*-* 08:00:00 America/Sao_Paulo
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=GLCtech - Relatorio semanal de trafego web (GA4 -> PDF -> e-mail)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=andre
+WorkingDirectory=/opt/glc-relatorio-trafego
+ExecStart=/opt/glc-relatorio-trafego/venv/bin/python /opt/glc-relatorio-trafego/glc_relatorio_trafego.py
+Environment=TZ=America/Sao_Paulo
