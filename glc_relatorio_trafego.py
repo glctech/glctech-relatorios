@@ -58,6 +58,9 @@ SITES = [
      "property_id": os.getenv("GA4_PROPERTY_GLCTECHSEC", "549308338")},
 ]
 CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", str(BASE_DIR / "credentials" / "service-account.json"))
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REFRESH_TOKEN = os.getenv("GOOGLE_REFRESH_TOKEN", "")
 SMTP_HOST = os.getenv("SMTP_HOST", "smtppro.zoho.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
 SMTP_USER = os.getenv("SMTP_USER", "")
@@ -139,12 +142,38 @@ def _run(client, prop, dims, mets, ini, fim, limit=1000, order_metric=None):
     return out
 
 
-def coletar_ga4(site, atual, anterior):
-    from google.analytics.data_v1beta import BetaAnalyticsDataClient
+def _ga4_credentials():
+    """Monta as credenciais para a GA4 Data API.
+
+    Preferência: OAuth 2.0 com refresh_token (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET /
+    GOOGLE_REFRESH_TOKEN) - não depende de chave privada de service account, então não
+    há segredo em formato de chave RSA para armazenar.
+
+    Fallback: service account JSON (GOOGLE_APPLICATION_CREDENTIALS), mantido apenas por
+    compatibilidade com configurações antigas.
+    """
+    if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and GOOGLE_REFRESH_TOKEN:
+        from google.oauth2.credentials import Credentials as UserCredentials
+
+        return UserCredentials(
+            token=None,
+            refresh_token=GOOGLE_REFRESH_TOKEN,
+            client_id=GOOGLE_CLIENT_ID,
+            client_secret=GOOGLE_CLIENT_SECRET,
+            token_uri="https://oauth2.googleapis.com/token",
+            scopes=["https://www.googleapis.com/auth/analytics.readonly"],
+        )
+
     from google.oauth2 import service_account
 
-    creds = service_account.Credentials.from_service_account_file(
+    return service_account.Credentials.from_service_account_file(
         CREDENTIALS, scopes=["https://www.googleapis.com/auth/analytics.readonly"])
+
+
+def coletar_ga4(site, atual, anterior):
+    from google.analytics.data_v1beta import BetaAnalyticsDataClient
+
+    creds = _ga4_credentials()
     client = BetaAnalyticsDataClient(credentials=creds)
     prop = site["property_id"]
 
